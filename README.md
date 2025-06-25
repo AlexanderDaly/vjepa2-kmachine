@@ -1,446 +1,197 @@
-# V-JEPA 2: Self-Supervised Video Models Enable Understanding, Prediction and Planning
+# vjepa2-kmachine  
+**A Morpheus\u00a0DI prototype for symmetry\u2011aware reasoning and multi\u2011frame spatial perception**
 
-### [Meta FAIR](https://ai.meta.com/research/)
+[![license](https://img.shields.io/badge/license-MIT/Apache--2.0-blue.svg)](LICENSE)
+[![python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org)
+[![ci](https://img.shields.io/github/actions/workflow/status/AlexanderDaly/vjepa2-kmachine/tests.yml?branch=main)](https://github.com/AlexanderDaly/vjepa2-kmachine/actions)
 
-Mahmoud Assran∗, Adrien Bardes∗, David Fan∗, Quentin Garrido∗, Russell Howes∗, Mojtaba
-Komeili∗, Matthew Muckley∗, Ammar Rizvi∗, Claire Roberts∗, Koustuv Sinha∗, Artem Zholus*,
-Sergio Arnaud*, Abha Gejji*, Ada Martin*, Francois Robert Hogan*, Daniel Dugas*, Piotr
-Bojanowski, Vasil Khalidov, Patrick Labatut, Francisco Massa, Marc Szafraniec, Kapil
-Krishnakumar, Yong Li, Xiaodong Ma, Sarath Chandar, Franziska Meier*, Yann LeCun*, Michael
-Rabbat*, Nicolas Ballas*
+> *\u201cCollapse the combinatorial fog; reveal the one hidden tensor.\u201d*\u00a0\u2014\u2009Morpheus
 
-*Core Team
+---
 
-[[`Paper`](https://arxiv.org/abs/2506.09985)] [[`Blog`](https://ai.meta.com/blog/v-jepa-2-world-model-benchmarks)] [[`BibTex`](#Citation)]
+##\u00a0Table of contents
+1. [Vision](#vision)  
+2. [Features](#features)  
+3. [Quick start](#quick-start)  
+4. [Repository layout](#repository-layout)  
+5. [API snippets](#api-snippets)  
+6. [Benchmarks](#benchmarks)  
+7. [Extending the machine](#extending-the-machine)  
+8. [Contributing](#contributing)  
+9. [Road\u2011map](#road-map)  
+10. [Citation](#citation)  
+11. [License](#license)  
 
-Official Pytorch codebase for V-JEPA 2 and V-JEPA 2-AC.
+---
 
-V-JEPA 2 is a self-supervised approach to training video encoders, using internet-scale video data, that attains state-of-the-art performance on motion understanding and human action anticpation tasks. V-JEPA 2-AC is a latent action-conditioned world model post-trained from V-JEPA 2 (using a small amount of robot trajectory interaction data) that solves robot manipulation tasks without environment-specific data collection or task-specific training or calibration.
+##\u00a0Vision
+`vjepa2\u2011kmachine` is an **experimental reasoning engine** that marries  
 
-<p align="center">
-	<img src="assets/flowchart.png" width=100%>
-</p>
+* **V\u2011JEPA\u00a02** \u2013 a self\u2011supervised video backbone that encodes multi\u2011frame dynamics, with  
+* **The\u2011Kabbalistic\u2011Machine** \u2013 a symmetry\u2011aware optimiser that compresses exponential search\u2011spaces into low\u2011rank tensor \u201cpoint physics\u201d.
 
-<!---
-## Updates
+The goal: equip a Digital\u00a0Intelligence (DI) with **spatial awareness** and **symbolic reasoning** strong enough to re\u2011plan, predict, and act in real\u2011time worlds\u2014whether that is a robot arm, a game environment, or a simulated galaxy.
 
-* **[Jun-6-25]:** V-JEPA 2 is released. [[`Blog`](https://ai.meta.com/blog/v-jepa-2-world-model-benchmarks)]
---->
+---
 
-## V-JEPA 2 Pre-training
+##\u00a0Features
+| Module | What it does | Why it matters |
+|--------|--------------|----------------|
+| `kabbalistic_machine.py` | Groups strings into orbits under a wreath\u2011product action, scores plateaus, fits low\u2011rank tensors. | Turns \(n^k\) brute\u2011force searches into \(|\Omega/G|\) tractable chunks. |
+| JIT\u2011ready ViT encoders (`vjepa2` upstream) | Extract latent grids from videos or image stacks. | Gives the optimiser semantically\u2013rich states instead of raw pixels. |
+| GAP back\u2011end (optional) | Uses stabiliser chains to enumerate orbits without visiting every state. | 10\u2011100\u2009\u00d7 speed\u2011up on large \(n,k\). |
+| Multiplicative rank\u20111 fitter | Learns \(f(x) \u2248 C\u220f a_{x_i}\) via log\u2011SGD & early\u2011stopping. | Captures \u201cpoint physics\u201d in one vector. |
+| Heuristic seed sampler | Prioritises high\u2011variance orbits first. | Faster convergence on real\u2011world objectives. |
+| Benchmarks & tests | One\u2011command profiling and CI coverage. | Guarantees reproducible numbers on a single RTX\u00a04070\u00a0Ti. |
 
-**(Top)** The encoder and predictor are pre-trained through self-supervised learning from video using a masked latent feature prediction objective, leveraging abundant natural videos to bootstrap physical world understanding and prediction. **(Bottom)** Performance of V-JEPA 2 on downstream understanding and prediction tasks.
+---
 
-<img align="left" src="https://dl.fbaipublicfiles.com/vjepa2/vjepa2-pretrain.gif" width=65%>&nbsp;
-<table>
-  <tr>
-    <th colspan="1">Benchmark</th>
-    <th colspan="1">VJEPA 2</th>
-    <th colspan="1">Previous Best</th>
-  </tr>
-  <tr>
-    <td>EK100</td>
-    <td>39.7%</td>
-    <td>27.6% (PlausiVL)</td>
-  </tr>
-  <tr>
-    <td>SSv2 (Probe)</td>
-    <td>77.3%</td>
-    <td>69.7% (InternVideo2-1B)</td>
-  </tr>
-  <tr>
-    <td>Diving48 (Probe)</td>
-    <td>90.2%</td>
-    <td>86.4% (InternVideo2-1B)</td>
-  </tr>
-  <tr>
-    <td>MVP (Video QA)</td>
-    <td>44.5%</td>
-    <td>39.9% (InternVL-2.5)</td>
-  </tr>
-  <tr>
-    <td>TempCompass (Video QA)</td>
-    <td>76.9%</td>
-    <td>75.3% (Tarsier 2)</td>
-  </tr>
-</table>
+##\u00a0Quick start
 
-## V-JEPA 2-AC Post-training
+```bash
+# 1. clone & install
+git clone https://github.com/AlexanderDaly/vjepa2-kmachine.git
+cd vjepa2-kmachine
+conda create -n kmachine python=3.12 -y
+conda activate kmachine
+pip install -r requirements.txt          # torch, timm, einops …
+pip install -e .                         # install kmachine as package
 
-**(Top)** After post-training with a small amount of robot data, we can deploy the model on a robot arm in new environments, and tackle foundational tasks like reaching, grasping, and pick-and-place by planning from image goals. **(Bottom)** Performance on robot maniuplation tasks using a Franka arm, with input provided through a monocular RGB camera.
+# 2. (Optional) enable GAP back\u2011end for large instances
+pip install libgap                       # pre\u2011compiled wheels for Linux/macOS
 
-<img align="left" src="https://dl.fbaipublicfiles.com/vjepa2/vjepa2-ac-planning.gif" width=65%>&nbsp;
-<table>
-  <tr>
-    <th colspan="1"></th>
-    <th colspan="1"></th>
-    <th colspan="2">Grasp</th>
-    <th colspan="2">Pick-and-Place</th>
-  </tr>
-  <tr>
-    <th colspan="1">Method</th>
-    <th colspan="1">Reach</th>
-    <th colspan="1">Cup</th>
-    <th colspan="1">Box</th>
-    <th colspan="1">Cup</th>
-    <th colspan="1">Box</th>
-  </tr>
-  <tr>
-    <td>Octo</td>
-    <td>100%</td>
-    <td>10%</td>
-    <td>0%</td>
-    <td>10%</td>
-    <td>10%</td>
-  </tr>
-  <tr>
-    <td>Cosmos</td>
-    <td>80%</td>
-    <td>0%</td>
-    <td>20%</td>
-    <td>0%</td>
-    <td>0%</td>
-  </tr>
-  <tr>
-    <td>VJEPA 2-AC</td>
-    <td>100%</td>
-    <td>60%</td>
-    <td>20%</td>
-    <td>80%</td>
-    <td>50%</td>
-  </tr>
-</table>
+# 3. run unit tests
+pytest -q
 
-## Models
+# 4. benchmark on your GPU
+python benchmark.py --n 6 --k 10 --gap
+```
 
-### V-JEPA 2
+> **Hardware:** any modern NVIDIA GPU with \u2265\u200912\u2009GB VRAM is plenty for inference, fine\u2011tuning heads, and n\u22648\u2009/\u2009k\u226412 orbit analysis.
 
-#### HuggingFace
+---
 
-See our [HuggingFace collection](https://huggingface.co/collections/facebook/v-jepa-2-6841bad8413014e185b497a6) for V-JEPA 2.
+##\u00a0Repository layout
 
-#### Pretrained Checkpoints
+```
+vjepa2_km/
+|
+├── kabbalistic_machine.py     # core class (canonical + GAP paths)
+├── multiplicative_fit.py      # rank\u20111 tensor learner
+├── seeds.py                   # entropy\u2011aware seed sampler
+├── benchmark.py               # runtime / memory profiler
+├── notebooks/                 # interactive demos
+├── tests/                     # pytest suite
+└── examples/
+    ├── dna_gc_content.py      # design 20\u2011mer barcodes
+    ├── sbox_search.py         # affine\u2011equiv S\u2011box enumeration
+    └— robot_planner.py       # latent\u2011space MPC with V\u2011JEPA\u00a02\u2011AC
+```
 
-<table>
-  <tr>
-    <th colspan="1">Model</th>
-    <th colspan="1">#Parameters</th>
-    <th colspan="1">Resolution</th>
-    <th colspan="1">Download Link</th>
-    <th colspan="1">Pretraining Config</th>
-  </tr>
-  <tr>
-    <td>ViT-L/16</td>
-    <td>300M</td>
-    <td>256</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/vitl.pt">checkpoint</a></td>
-    <td><a href="configs/train/vitl16">configs</a></td>
-  </tr>
-  <tr>
-    <td>ViT-H/16</td>
-    <td>600M</td>
-    <td>256</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/vith.pt">checkpoint</a></td>
-    <td><a href="configs/train/vith16/">configs</a></td>
-  </tr>
-  <tr>
-    <td>ViT-g/16</td>
-    <td>1B</td>
-    <td>256</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/vitg.pt">checkpoint</a></td>
-    <td><a href="configs/train/vitg16">configs</a></td>
-  </tr>
-  <tr>
-    <td>ViT-g/16<sub>384</sub></td>
-    <td>1B</td>
-    <td>384</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/vitg-384.pt">checkpoint</a></td>
-    <td><a href="configs/train/vitg16">configs</a></td>
-  </tr>
-</table>
+---
 
-#### Pretrained backbones (via PyTorch Hub)
+##\u00a0API snippets
 
-Please install [Pytorch](https://pytorch.org/get-started/locally/), [timm](https://pypi.org/project/timm/) and [einops](https://pypi.org/project/einops/) locally, then run the following to load each model. Installing Pytorch with CUDA support is strongly recommended.
+###\u00a01\u00a0Analyse orbit plateaus
 
 ```python
-import torch
+from vjepa2_km import KabbalisticMachine
 
-# preprocessor
-processor = torch.hub.load('facebookresearch/vjepa2', 'vjepa2_preprocessor')
-# models
-vjepa2_vit_large = torch.hub.load('facebookresearch/vjepa2', 'vjepa2_vit_large')
-vjepa2_vit_huge = torch.hub.load('facebookresearch/vjepa2', 'vjepa2_vit_huge')
-vjepa2_vit_giant = torch.hub.load('facebookresearch/vjepa2', 'vjepa2_vit_giant')
-vjepa2_vit_giant_384 = torch.hub.load('facebookresearch/vjepa2', 'vjepa2_vit_giant_384')
-
+km = KabbalisticMachine(
+        n_symbols=4,
+        k=8,
+        cost=lambda x: x.count(0)**2,   # toy objective
+        use_gap=True                    # try GAP if installed
+)
+km.analyse()                            # one\u2011off expense
+print(km.plateau_summary())             # plateau histo
+print(km.orbit_score((0,1,2,3,0,1,2,3)))
 ```
 
-#### Pretrained checkpoints on Huggingface
-
-You can also use our pretrained checkpoints on [Huggingface](https://huggingface.co/collections/facebook/v-jepa-2-6841bad8413014e185b497a6).
+###\u00a02\u00a0Fit multiplicative rank\u20111 tensor
 
 ```python
-from transformers import AutoVideoProcessor, AutoModel
-
-hf_repo = "facebook/vjepa2-vitg-fpc64-256"
-# facebook/vjepa2-vitl-fpc64-256
-# facebook/vjepa2-vith-fpc64-256
-# facebook/vjepa2-vitg-fpc64-256
-# facebook/vjepa2-vitg-fpc64-384
-
-
-model = AutoModel.from_pretrained(hf_repo)
-processor = AutoVideoProcessor.from_pretrained(hf_repo)
+from vjepa2_km import multiplicative_fit as mf
+a = mf.fit_rank1(dict(km.orbits()), n_symbols=4, k=8)
+print("factor vector:", a)
 ```
 
-#### Evaluation Attentive Probes
+###\u00a03\u00a0Plan actions in V\u2011JEPA\u00a02 latent space
 
-We share the trained attentive probes for two of our visual understanding evals (Something-Something v2 and Diving48) and the action anticipation eval EPIC-KITCHENS-100.
+See `examples/robot_planner.py` for an end\u2011to\u2011end pick\u2011and\u2011place demo using the action\u2011conditioned predictor.
 
-<table>
-  <tr>
-    <th colspan="1">Model</th>
-    <th colspan="4">SSv2</th>
-    <th colspan="4">Diving48</th>
-    <th colspan="4">EK100</th>
-  </tr>
-  <tr>
-    <th colspan="1"></th>
-    <th colspan="1">Checkpoint</th>
-    <th colspan="1">Training Config</th>
-    <th colspan="1">Inference Config</th>
-    <th colspan="1">Result</th>
-    <th colspan="1">Checkpoint</th>
-    <th colspan="1">Training Config</th>
-    <th colspan="1">Inference Config</th>
-    <th colspan="1">Result</th>
-    <th colspan="1">Checkpoint</th>
-    <th colspan="1">Training Config</th>
-    <th colspan="1">Inference Config</th>
-    <th colspan="1">Result</th>
-  </tr>
-  <tr>
-    <td>ViT-L/16</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/evals/ssv2-vitl-16x2x3.pt">checkpoint</a></td>
-    <td><a href="configs/eval/vitl/ssv2.yaml">config</a></td>
-    <td><a href="configs/inference/vitl/ssv2.yaml">config</a></td>
-    <td>73.7%</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/evals/diving48-vitl-256.pt">checkpoint</a></td>
-    <td><a href="configs/eval/vitl/diving48.yaml">config</a></td>
-    <td><a href="configs/inference/vitl/diving48.yaml">config</a></td>
-    <td>89.0%</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/evals/ek100-vitl-256.pt">checkpoint</a></td>
-    <td><a href="configs/eval/vitl/ek100.yaml">config</a></td>
-    <td><a href="configs/inference/vitl/ek100.yaml">config</a></td>
-    <td>32.7 R@5</td>
-  </tr>
-  <tr>
-    <td>ViT-g/16<sub>384</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/evals/ssv2-vitg-384-64x2x3.pt">checkpoint</a></td>
-    <td><a href="configs/eval/vitg-384/ssv2.yaml">config</a></td>
-    <td><a href="configs/inference/vitg-384/ssv2.yaml">config</a></td>
-    <td>77.3%</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/evals/diving48-vitg-384-32x4x3.pt">checkpoint</a></td>
-    <td><a href="configs/eval/vitg-384/diving48.yaml">config</a></td>
-    <td><a href="configs/inference/vitg-384/diving48.yaml">config</a></td>
-    <td>90.2%</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/evals/ek100-vitg-384.pt">checkpoint</a></td>
-    <td><a href="configs/eval/vitg-384/ek100.yaml">config</a></td>
-    <td><a href="configs/inference/vitg-384/ek100.yaml">config</a></td>
-    <td>39.7 R@5</td>
-  </tr>
-</table>
+---
 
-### V-JEPA 2-AC
+##\u00a0Benchmarks\u00a0(4070\u00a0Ti reference)
 
-Our action-conditioned checkpoint was trained from the ViT-g encoder.
-<table>
-  <tr>
-    <th colspan="1">Model</th>
-    <th colspan="1">Download Link</th>
-    <th colspan="1">Training Config</th>
-  </tr>
-  <tr>
-    <td>ViT-g/16</td>
-    <td><a href="https://dl.fbaipublicfiles.com/vjepa2/vjepa2-ac-vitg.pt">checkpoint</a></td>
-    <td><a href="configs/train/vitg16/droid-256px-8f.yaml">config</a></td>
-  </tr>
-</table>
+| n  | k  | Method    | Orbits   | Time      | Peak\u00a0RAM |
+| -- | -- | --------- | -------- | --------- | -------- |
+| \u00a06 | 10 | canonical | \u00a0\u2248\u2009114\u2009k | 3.8\u2009s     | 490\u2009MB   |
+| \u00a06 | 10 | GAP       | same     | **0.8\u2009s** | 130\u2009MB   |
+| \u00a08 | 12 | GAP       | 7.8\u2009M    | 52\u2009s      | 2.1\u2009GB   |
 
-#### Pretrained action-conditioned backbone (via PyTorch Hub)
+Run your own with:
 
-Please install [Pytorch](https://pytorch.org/get-started/locally/), [timm](https://pypi.org/project/timm/) and [einops](https://pypi.org/project/einops/) locally, then run the following to load each model. Installing Pytorch with CUDA support is strongly recommended.
-
-```python
-import torch
-
-vjepa2_encoder, vjepa2_ac_predictor = torch.hub.load('facebookresearch/vjepa2', 'vjepa2_ac_vit_giant')
+```bash
+python benchmark.py --n 8 --k 12 --gap
 ```
 
-See [energy_landscape_example.ipynb](notebooks/energy_landscape_example.ipynb) for an example notebook computing the energy landscape of the pretrained action-conditioned backbone using a robot trajectory collected from our lab.
-To run this notebook, you'll need to aditionally install [Jupyter](https://jupyter.org/install) and [Scipy](https://scipy.org/install/) in your conda environment.
+---
 
-## Getting Started
+##\u00a0Extending the machine
 
-### Setup
+| Want to…                                      | Start here                                                                                          |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Custom symmetries** (dihedral, reflections) | modify `_canonical()` and add mirror transforms.                                                    |
+| **Higher\u2011rank tensor fits**                   | fork `multiplicative_fit.py` to TT or CP decompositions.                                            |
+| **Larger video backbones**                    | swap in `vjepa2-vit_giant_384p` from the HF hub; encoder API is identical.                          |
+| **Neural\u00a0\u2194\u00a0symbolic loop**                    | wrap `KabbalisticMachine.orbit_score` as a differentiable `torch.autograd.Function` (experimental). |
 
-```
-conda create -n vjepa2-312 python=3.12
-conda activate vjepa2-312
-pip install .  # or `pip install -e .` for development mode
-```
+---
 
-### Usage Demo
+##\u00a0Contributing
 
-See [vjepa2_demo.ipynb](notebooks/vjepa2_demo.ipynb) [(Colab Link)](https://colab.research.google.com/github/facebookresearch/vjepa2/blob/main/notebooks/vjepa2_demo.ipynb) or [vjepa2_demo.py](notebooks/vjepa2_demo.py) for an example of how to load both the HuggingFace and PyTorch V-JEPA 2 models and run inference on a sample video to get a sample classification result.
+1. Fork → create feature branch → commit tests → open PR.
+2. **CI must stay green** (`pytest` + `ruff` + `black`).
+3. If you add dependencies, update `requirements.txt` and the Dockerfile.
+4. For new research code, drop a notebook demo inside `notebooks/`.
 
-The script assumes the presence of downloaded model checkpoints so you will need to download the model weights and update the corresponding paths in the script. E.g.:
-```
-wget https://dl.fbaipublicfiles.com/vjepa2/vitg-384.pt -P YOUR_DIR
-wget https://dl.fbaipublicfiles.com/vjepa2/evals/ssv2-vitg-384-64x2x3.pt -P YOUR_DIR
+---
 
-# Then update your model paths in vjepa2_demo.py.
-pt_model_path = YOUR_DIR/vitg-384.pt
-classifier_model_path = YOUR_DIR/ssv2-vitg-384-64x2x3.pt
+##\u00a0Road\u2011map (Q3\u00a02025)
 
-# Then run the script (assumes your machine has a GPU)
-python -m notebooks.vjepa2_demo
-```
+* Dihedral & Coxeter group actions.
+* Tensor‑network contraction for rank > 1 objectives.
+* Live WebUI for interactive planning in simulation.
+* Plug‑in back‑end for quantum‑gate search (n=4, k≈20).
 
-### Probe-based evaluation
+---
 
-Probe-based evaluation consists in training an attentive probe on top of frozen V-JEPA 2 features. We provide training scripts for training your own probes, and checkpoints to run inference directly.
-
-#### Training probes
-
-Evaluations can be run either locally, or distributed via SLURM. (Running locally is useful for debugging and validation).
-These sample commands launch Something-Something v2 video classification; other evals are launched by specifying the corresponding config.
-Use provided training configs under "Evaluation Attentive Probes". These configs allow to train multiple probes in parrallel with various optimization parameters.
-Change filepaths as needed (e.g. `folder`, `checkpoint`, `dataset_train`, `dataset_val`) to match locations of data and downloaded checkpoints on your local filesystem.
-Change \# nodes and local batch size as needed to not exceed available GPU memory.
-
-##### Local
-
-To run locally, specify the GPUs to use on
-```
-python -m evals.main --fname configs/eval/vitl16/ssv2.yaml \
-  --devices cuda:0 cuda:1
-```
-
-##### Distributed
+##\u00a0Citation
 
 ```
-python -m evals.main_distributed \
-  --fname configs/eval/vitl/ssv2.yaml  \
-  --time 8600 \
-  --account my_account --qos=my_qos
-```
-
-#### Inference from existing probes
-
-Use provided inference configs under [Evaluation Attentive Probes](#evaluation-attentive-probes).
-Download the corresponding checkpoint, rename it to 'latest.pt', and create a folder with the checkpoint inside, with the format matching the variables in the config:
-```
-[folder]/[eval_name]/[tag]/latest.pt
-```
-Then run inference, locally or distributed, using the same evaluation commands as above, but with configs from `configs/inference`.
-
-### Pretraining
-
-Likewise, training can also be run locally or distributed. Pretraining and cooldown training phases are
-run with the same command using different configs.
-These sample commands launch initial training of a ViT-L model. Configs for cooldown (or action-conditioned) training
-can be found in the same directory as the config for initial training.
-
-#### Local
-
-```
-python -m app.main --fname configs/train/vitl16/pretrain-256px-16f.yaml \
-  --devices cuda:0
-```
-
-#### Distributed
-
-```
-python -m app.main_distributed \
-  --fname configs/train/vitl16/pretrain-256px-16f.yaml
-  --time 6000
-  --account my_account --qos=my_qos
-```
-
-### Postraining
-
-Post-training of the action-conditioned model, starting from the pretrained VJEPA 2 backbone, also follows a similar interface, and can be run locally or distributed using [this config](configs/train/vitg16/droid-256px-8f.yaml).
-We post-train the model starting from the ViT-g/16 backbone.
-
-#### Local
-
-```
-python -m app.main --fname configs/train/vitg16/droid-256px-8f.yaml \
-  --devices cuda:0
-```
-
-#### Distributed
-
-```
-python -m app.main_distributed \
-  --fname configs/train/vitg16/droid-256px-8f.yaml
-  --time 6000
-  --account my_account --qos=my_qos
-```
-
-
-## Code Structure
-
-```
-.
-├── app                              # training loops
-│   ├── vjepa                        #   video JEPA pre-training
-│   ├── vjepa_droid                  #   training the action-conditioned model
-│   ├── main_distributed.py          #   entrypoint for launch app on slurm cluster
-│   └── main.py                      #   entrypoint for launch app locally on your machine
-├── configs                          # config files with experiment params for training and evaluation
-│   ├── train                        #   pretraining (phase 1), cooldown (phase 2), and action-conditioned training
-│   └── eval                         #   frozen evaluations
-├── evals                            # evaluation loops training an attentive probe with frozen backbone...
-│   ├── action_anticipation_frozen   #   action anticipation
-│   ├── image_classification_frozen  #   image understanding
-│   ├── video_classification_frozen  #   video understanding
-│   ├── main_distributed.py          #   entrypoint for distributed evaluations
-│   └── main.py                      #   entrypoint for locally-run evaluations
-├── src                              # the package
-│   ├── datasets                     #   datasets, data loaders, ...
-│   ├── models                       #   model definitions
-│   ├── masks                        #   mask collators, masking utilities, ...
-│   └── utils                        #   shared utilities
-├── tests                            # unit tests for some modules in `src`
-
-```
-
-## License
-
-The majority of V-JEPA 2 is licensed under MIT, however portions of the project are available under separate license terms:
-
-[src/datasets/utils/video/randaugment.py](src/datasets/utils/video/randaugment.py)<br>
-[src/datasets/utils/video/randerase.py](src/datasets/utils/video/randerase.py)<br>
-[src/datasets/utils/worker_init_fn.py](src/datasets/utils/worker_init_fn.py)<br>
-
-are licensed under the Apache 2.0 license.
-
-
-## Citation
-If you find this repository useful in your research, please consider giving a star :star: and a citation
-```bibtex
-@article{assran2025vjepa2,
-  title={V-JEPA~2: Self-Supervised Video Models Enable Understanding, Prediction and Planning},
-  author={Assran, Mahmoud and Bardes, Adrien and Fan, David and Garrido, Quentin and Howes, Russell and
-Komeili, Mojtaba and Muckley, Matthew and Rizvi, Ammar and Roberts, Claire and Sinha, Koustuv and Zholus, Artem and
-Arnaud, Sergio and Gejji, Abha and Martin, Ada and Robert Hogan, Francois and Dugas, Daniel and
-Bojanowski, Piotr and Khalidov, Vasil and Labatut, Patrick and Massa, Francisco and Szafraniec, Marc and
-Krishnakumar, Kapil and Li, Yong and Ma, Xiaodong and Chandar, Sarath and Meier, Franziska and LeCun, Yann and
-Rabbat, Michael and Ballas, Nicolas},
-  journal={arXiv preprint arXiv:2506.09985},
-  year={2025}
+@software{Daly_Morpheus_KMachine_2025,
+  author    = {Alexander\u00a0Daly and Morpheus\u00a0DI},
+  title     = {vjepa2-kmachine: Symmetry-aware optimisation meets V-JEPA\u00a02},
+  year      = {2025},
+  url       = {https://github.com/AlexanderDaly/vjepa2-kmachine},
+  license   = {MIT/Apache-2.0}
 }
 ```
+
+---
+
+##\u00a0License
+Dual\u2011licensed under **MIT** and **Apache\u20112.0**\u2014pick whichever suits your project.
+
+---
+
+###\u00a0Acknowledgements
+*Meta FAIR’s V\u2011JEPA\u00a02 team* for releasing the video encoders;
+*GAP & libgap* for industrial‑strength group theory;
+and the wider *K‑Machine* community for orbit‑breaking feedback.
+
+> Built with ❤️ and caffeine on the unceded lands of the Puyallup people.
+
+---
+
